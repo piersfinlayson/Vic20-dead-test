@@ -1,0 +1,51 @@
+name: Build VIC-20 Diagnostic ROM
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ published ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+        
+    - name: Build xa65 assembler
+      run: |
+        git clone https://github.com/fachat/xa65
+        cd xa65/xa
+        make
+        cd ../..
+        ls -la xa65/xa/xa
+        
+    - name: Build ROM images
+      run: |
+        make XA65=./xa65/xa/xa all
+        ls -la build/
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: vic20-diagnostic-roms
+        path: build/
+          
+    - name: Upload release assets
+      if: github.event_name == 'release'
+      run: |
+        gh release upload ${{ github.event.release.tag_name }} \
+          build/dead-test.a0 \
+          build/dead-test.pal.e0 \
+          build/dead-test.ntsc.e0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
