@@ -3,6 +3,7 @@
 
 ; CRC32 routine based on one copyright cloudgen 2006
 
+; Enhanced in 2025 by Piers Finlayson to operate from $E000
 
 Pass    = 122                   ; char for tick   
 Fail    = 24                    ; char for cross
@@ -57,16 +58,25 @@ VICCRF	= $900F                 ; background and border colour
             		                ; 3	reverse video
                     		        ; 2-0	border colour
 
+#ifndef KERNAL_ROM
 VICPALNTSC = $EDE4		        ; Byte used to determine if PAL or NTSC
 								    ; PAL =  $0C
 								    ; NTSC = $05
+#else ; KERNAL_ROM
+VICPALNTSC = $FFF9
+NTSC_VERSION = $00
+PAL_VERSION = $01
+#endif ; KERNAL_ROM
 
-
+#ifndef KERNAL_ROM
 *	=	$A000                   ; set for cartridge
 
 .WORD	DEDCOLD
 .WORD	$0000       		
 .BYT	"A0",'C'+$80,'B'+$80,'M'+$80    ; Vic-20 looks for A0CBM on startup 
+#else ; KERNAL_ROM
+*   =   $E000
+#endif ; KERNAL_ROM
 
 ;=======================================================================================================
 ; Initialization
@@ -85,7 +95,11 @@ ILOOP                           ; Loops and copies setup to VIC Chip
 
 
     ; check if PAL or NTSC and adjust values in VICINIT
+#ifndef KERNAL_ROM
 	LDA #$0C
+#else // KERNAL_ROM
+    LDA #PAL_VERSION
+#endif
     CMP VICPALNTSC              ; Check if PAL or NTSC and adjust setup accordingly
     BEQ PAL
 
@@ -2009,3 +2023,37 @@ SCRN
         .BYT $6d,$40	;"             │└─"
         .BYT $40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,"V1.0"
         .BYT $7d,";             "
+
+#ifndef KERNAL_ROM
+
+; Original ROM version located at $A000
+
+; Fill up rest of 4096 byte image with $00 - which is how the original version
+; was padded
+.dsb $B000 - *, $00    ; Fill up rest of 4096 byte image
+
+#else ; KERNAL_ROM
+
+; Kernel ROM, located at $E000
+
+; Pad to fill the gap before vectors
+.dsb $FFF9 - *, $FF     ; Fill from current location to $FFFA with $FF
+
+; Store off whether NTSC or PAL
+* = $FFF9
+#ifdef NTSC_VER
+    .byte NTSC_VERSION
+#else
+#ifdef PAL_VER
+    .byte PAL_VERSION
+#else
+#error "Define either NTSC or PAL, passing -DNTSC=1 or -DPAL=1 ionto xa65"
+#endif
+#endif
+
+; Vectors
+* = $FFFA
+.word 0000      ; NMI handler - unused
+.word DEDCOLD   ; Reset vector
+.word 0000      ; IRQ handler - unused
+#endif ; KERNAL_ROM

@@ -10,11 +10,40 @@ Code based on source code from Simon Rowe. Most of the testing routines are the 
 
 Orignal version can be found at https://eden.mose.org.uk/gitweb/?p=dead-test.git;a=summary
 
+## Build instructions
+
+Install xa65
+
+```bash
+git clone https://github.com/fachat/xa65
+cd xa65/xa
+make  # Produces `xa` binary in the current directory
+```
+
+Then clone and build the dead test cartridge
+
+```bash
+cd ~  # Set current directory as required
+git clone https://github.com/piersfinlayson/Vic20-dead-test.git
+cd Vic20-dead-test
+XA65=/path/to/xa65 make all
+```
+
+This creates 3 version of the dead test program:
+
+- `build/dead-test.a0` (original cartridge version)
+- `build/dead-test.pal.e0` (PAL KERNAL version)
+- `build/dead-test.ntsc.e0` (NTSC KERNAL version)
 
 
 ## Usage
 
-The compiled binary (dead-test.a0) can be loaded to a cartridge at address $A000
+The compiled binary (`build/dead-test.a0`) can be loaded to a cartridge at address $A000.
+
+Alternatively, you can replace your kernal ROM with one of:
+
+- `build/dead-test.pal.e0` (PAL KERNAL version)
+- `build/dead-test.ntsc.e0` (NTSC KERNAL version)
 
 When powering on the program will detect if you are using PAL or NTSC and set the appropriate video modes. 
 Tests will then be run on the lower RAM, followed by video RAM.
