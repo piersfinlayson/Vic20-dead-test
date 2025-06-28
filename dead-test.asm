@@ -3,7 +3,9 @@
 
 ; CRC32 routine based on one copyright cloudgen 2006
 
-; Enhanced in 2025 by Piers Finlayson to operate from $E000
+; Enhanced in 2025 by Piers Finlayson to operate as a kernal ROM ($E000)
+
+#define VERSION "V1.1"
 
 Pass    = 122                   ; char for tick   
 Fail    = 24                    ; char for cross
@@ -493,7 +495,25 @@ RLOOP
 
     STA CHARPOS
 
-    JSR IDROM                   
+#ifdef KERNAL_ROM
+    ; We handle the kernal ROM differently, because it's hard to pre-calculate
+    ; the ROM's finished checksum as part of the build.
+
+    ; Check if this is the kernal ROM, Y is the index into ROMPAG
+    CPY #2
+    BNE NOT_KERNAL
+    
+    ; This is the kernal ROM - handle specially for KERNAL_ROM build
+    JSR DISPLAY_DEADTEST
+    JMP NEXT_ROM
+    
+NOT_KERNAL:
+#endif
+    JSR IDROM    
+
+#ifdef KERNAL_ROM
+NEXT_ROM:
+#endif
     INC TMP+3
     LDY TMP+3
     LDA TMP+2
@@ -508,6 +528,28 @@ OUT
     STA CRCZ
     RTS
 .)
+
+#ifdef KERNAL_ROM
+;=======================================================================================================
+; Display "DEAD-TEST"
+;=======================================================================================================
+DISPLAY_DEADTEST
+.(
+    LDX CHARPOS                 ; load X with screen position
+    LDY #0                      ; string index
+
+DLOOP
+    LDA DEADTEST_STR,Y          ; get character from string
+    BEQ OUT                     ; end of string (null terminator)
+    STA SCBASE+$100,X           ; write to screen (bottom half)
+    INX                         ; next screen position
+    INY                         ; next string character
+    BNE DLOOP
+
+OUT
+    RTS
+.)
+#endif
 
 ;=======================================================================================================
 ; Test RAM 
@@ -1859,6 +1901,11 @@ ROMSUMS
     .BYT $7f,$75,$3a,$68,'J','i'-$60,'f'-$60,'f'-$60,'y'-$60,"NTSC"     ; JiffyDOS NTSC KERNAL
     .BYT 0
 
+#ifdef KERNAL_ROM
+DEADTEST_STR
+    .BYT "DEAD-TEST",0          ; null-terminated string
+#endif ; KERNAL_ROM
+
     ; CRC tables
 
 CRCT0	
@@ -2021,7 +2068,7 @@ SCRN
         .BYT $5d,"                    ",$5d
         .BYT $5d,"                    ",$5d
         .BYT $6d,$40	;"             │└─"
-        .BYT $40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,"V1.0"
+        .BYT $40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,VERSION
         .BYT $7d,";             "
 
 #ifndef KERNAL_ROM
