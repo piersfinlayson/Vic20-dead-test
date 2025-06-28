@@ -3,6 +3,7 @@ name: Build VIC-20 Diagnostic ROM
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ] 
   pull_request:
     branches: [ main, master ]
   release:
@@ -41,11 +42,13 @@ jobs:
         path: build/
           
     - name: Upload release assets
-      if: github.event_name == 'release'
+      if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
       run: |
-        gh release upload ${{ github.event.release.tag_name }} \
-          build/dead-test.a0 \
-          build/dead-test.pal.e0 \
-          build/dead-test.ntsc.e0
+        # Create release if it's a tag push
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+        gh release create ${{ github.ref_name }} build/* --title "Release ${{ github.ref_name }}"
+        else
+        gh release upload ${{ github.event.release.tag_name }} build/*
+        fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
