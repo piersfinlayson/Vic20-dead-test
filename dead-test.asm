@@ -62,6 +62,7 @@ VICCRF	= $900F                 ; background and border colour
 
 #ifndef KERNAL_ROM
 VICPALNTSC = $EDE4		        ; Byte used to determine if PAL or NTSC
+                                ; This is part of the kernal ROM
 								    ; PAL =  $0C
 								    ; NTSC = $05
 #else ; KERNAL_ROM
@@ -87,8 +88,11 @@ PAL_VERSION = $01
 DEDCOLD
 .(
 
-    LDX	#SCRN-VICINIT           ; set byte count to copy. Load count into X
+    ; Initialize the VIC chip
+    LDX	#SCRN-VICINIT           ; Set X to length of SCRN VICINIT section
 ILOOP                           ; Loops and copies setup to VIC Chip
+                                ; Starts at the end of VICINIT and works
+                                ; backwards
     LDA	VICINIT-1,X             ; get byte from setup table.
     STA	VICCR0-1,X              ; save byte to VIC chip starting to $9000
     DEX                         ; decrement count/index. Dec X
@@ -111,16 +115,17 @@ NTSC
     LDA #$19
     STA VICCR0+1                ; vertical origin
     JMP FILLSCREEN
+
 PAL
     LDA #$0C
     STA VICCR0                  ; interlace and horizontal origin
     LDA #$26
     STA VICCR0+1                ; vertical origin    
 
-
     LDA #0
     TAY
 
+; PAL only routine - not sure why
 FILLP                           ; Clear colour address map $9400 and $9600
     STA $0000,Y
     STA CLBASE,Y                ; $9600
@@ -133,6 +138,8 @@ FILLP                           ; Clear colour address map $9400 and $9600
 FILLSCREEN
 
     ; Video memory starts at $1000. This is set in VICINIT
+    ; Y starts out at 0 here
+    ; Screen is filled from start and from 256 bytes through at the same time
 	LDA SCRN,Y
     STA $1000,Y                         
     LDA SCRN+$100,Y
@@ -140,8 +147,7 @@ FILLSCREEN
     INY
     BNE FILLSCREEN
 
-
-
+    ; Point the VIC chip at the video and character memory
     LDA #$c2                    ; b1100 0010
                                 ; Video memory address b1100 = $1000
                                 ; Character memory address b0010 = $8000
@@ -163,16 +169,21 @@ START
     LDY #$79        	        
     LDX #0          	        
 
+    ; Increment Y then fill $0000-$03FF with that value - starts at $7A
+    ; and each subsequent byte is filled with $7A+1
 LOWLP
-    INY                         ; Store 0x79 at $0000,$0100, $0200, $0300. Inc value, store at $0000+x etc etc, until all values from 0000-03ff filles
-    TYA                          
-    STA $0000,X                     
-    STA $0100,X                   
-    STA $0200,X                   
-    STA $0300,X                  
-    INX                          
-    BNE LOWLP                   ; Branch if zero flag is clear
+    INY
+    TYA
+    STA $0000,X
+    STA $0100,X
+    STA $0200,X
+    STA $0300,X
+    INX
+    BNE LOWLP
 
+    ; Loop through $0000 to $03FF.  EOR the value in memory with the
+    ; value that was stored there.  Then AND with $0F to test the lower
+    ; nibble.  If it's zero, we read the same value we stored.
 LORLP
     INY             
     TYA             
@@ -209,10 +220,10 @@ LORLP
     EOR #$FF          
     TAY               
     BMI LOWLP         
-                                ; test bits 7-4 (UE2)
+
+    ; Now do the same test for the upper nibble
     LDY #$79
     LDX #0
-
 HIWLP	
     INY
     TYA                         ; Loop through $0000 to $03FF
@@ -353,10 +364,11 @@ CLRLP
     LDA #Green                  ; Set colour to green 
     STA COLOUR+$8400  
 
-    ; we can now use zero page for indirection and call subroutines
+    ; we can now use zero page for indirection, set the stack and call
+    ; subroutines
     LDX #$FF
     TXS                         ; set stack pointer to $FF
-    LDA #%0011110               ; set background to white, border to blue
+    LDA #%0011010               ; set background to white, border to red
     STA VICCRF
 
     ; clear zero page and fill colour attribute memory

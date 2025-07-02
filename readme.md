@@ -1,8 +1,12 @@
-# VIC 20 Dead Test cartridge
+# VIC 20 Dead Test Cartridge/Kernal
 
-Code based on source code from Simon Rowe. Most of the testing routines are the same but I have added in a few extra tweaks.
+A dead test cartridge and kernal for the Commodore VIC-20, designed to test the hardware of the machine. It checks the lower RAM, video RAM, expansion RAM, and ROMs for faults.
 
-Orignal version can be found at https://eden.mose.org.uk/gitweb/?p=dead-test.git;a=summary
+It can be deployed as a cartridge or as a replacement for the kernal ROM.
+
+The cartridge version is less invasive to install, and automatically detects if the machine is PAL or NTSC and set the video modes accordingly.  However, the cartridge version is launched by the kernal, and relies on the system having working stack RAM.
+
+The kernal version does not relies on working stack RAM to launch, as it runs in place of the stock kernal, and does not use the stack until the first 1KB of lower memory has been successfully tested.  Hence, if the cartridge version fails to launch, you can try the kernal version instead.  You must install the correct PAL or NTSC kernal ROM for the machine, as, when running as a kernal ROM, the code cannot not detect this automatically.
 
 ## Build instructions
 
