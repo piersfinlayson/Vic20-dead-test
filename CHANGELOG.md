@@ -1,6 +1,6 @@
 # Changelog
 
-## V1.1.01 - TBC
+## V1.1.01 - 2025-07-02
 
 - Added piers.rocks to border, to note version of the code
 - Increased version number string length
