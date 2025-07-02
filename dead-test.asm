@@ -5,7 +5,7 @@
 
 ; Enhanced in 2025 by Piers Finlayson to operate as a kernal ROM ($E000)
 
-#define VERSION "V1.1"
+#define VERSION "V1.1.01"
 
 Pass    = 122                   ; char for tick   
 Fail    = 24                    ; char for cross
@@ -2067,8 +2067,8 @@ SCRN
         .BYT $5d,"                    ",$5d
         .BYT $5d,"                    ",$5d
         .BYT $5d,"                    ",$5d
-        .BYT $6d,$40	;"             │└─"
-        .BYT $40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,$40,VERSION
+        .BYT $6d  ;"             │└"
+        .BYT "PIERS.ROCKS",$40,$40,VERSION
         .BYT $7d,";             "
 
 #ifndef KERNAL_ROM

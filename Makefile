@@ -27,7 +27,7 @@ XA65 ?= xa
 BUILD_DIR = build
 
 # Output files
-TARGETS = $(BUILD_DIR)/dead-test.a0 $(BUILD_DIR)/dead-test.pal.e0 $(BUILD_DIR)/dead-test.ntsc.e0
+TARGETS = $(BUILD_DIR)/dead-test.a0 $(BUILD_DIR)/dead-test.pal.e0 $(BUILD_DIR)/dead-test.ntsc.e0 $(BUILD_DIR)/dead-test.crt
 
 # Default target builds all versions
 all: $(TARGETS)
@@ -36,16 +36,24 @@ all: $(TARGETS)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# Original cartridge version
-$(BUILD_DIR)/dead-test.a0: dead-test.asm | $(BUILD_DIR)
+# Cartridge version as binary
+$(BUILD_DIR)/dead-test.a0: dead-test.asm Makefile | $(BUILD_DIR)
 	$(XA65) -o $@ dead-test.asm
 
+# Cartridge version as CRT file
+$(BUILD_DIR)/dead-test.crt: $(BUILD_DIR)/dead-test.a0 Makefile | $(BUILD_DIR)
+	@printf 'VIC20 CARTRIDGE \000\000\000\100\002\000\000\000\000\000\000\000\000\000\000\000' > $@
+	@printf 'VIC20 DEAD TEST\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000' >> $@
+	@printf 'CHIP\000\000\020\020\000\000\000\000\240\000\020\000' >> $@
+	@cat $< >> $@
+	@echo "Cartridge file created: $@"
+
 # PAL KERNAL version  
-$(BUILD_DIR)/dead-test.pal.e0: dead-test.asm | $(BUILD_DIR)
+$(BUILD_DIR)/dead-test.pal.e0: dead-test.asm Makefile | $(BUILD_DIR)
 	$(XA65) -DKERNAL_ROM=1 -DPAL_VER=1 -o $@ dead-test.asm
 
 # NTSC KERNAL version
-$(BUILD_DIR)/dead-test.ntsc.e0: dead-test.asm | $(BUILD_DIR)
+$(BUILD_DIR)/dead-test.ntsc.e0: dead-test.asm Makefile | $(BUILD_DIR)
 	$(XA65) -DKERNAL_ROM=1 -DNTSC_VER=1 -o $@ dead-test.asm
 
 # Clean up generated files
